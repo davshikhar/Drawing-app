@@ -8,6 +8,7 @@ export function middleware(req:Request,res:Response,next:NextFunction){
 
     if(decode){
         //@ts-ignore TODO:- FIX THE ERROR
+        //the modification of req object must be done to have userId in the req object it must be done globally in other file
         req.userId = decode.userId;
         next();
     }

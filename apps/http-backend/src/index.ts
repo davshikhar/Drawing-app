@@ -1,3 +1,4 @@
+require("dotenv").config({path:"../../.env"});
 import express from "express";
 import jwt from "jsonwebtoken";
 import {z} from  "zod";
@@ -5,6 +6,8 @@ import { middleware } from "./middleware";
 
 const app = express();
 const port = 3001;
+
+console.log("JWT_SECRET", process.env.JWT_SECRET);
 
 const schema = z.object({
     name:z.string().max(20,"Name should be under 20 characters"),
