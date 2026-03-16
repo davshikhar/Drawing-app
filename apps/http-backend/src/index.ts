@@ -4,11 +4,10 @@ import jwt from "jsonwebtoken";
 import {z} from  "zod";
 import { middleware } from "./middleware";
 import {signupSchema, siginSchema, createRoomSchema} from "@repo/common/types";
+import {prisma} from "@repo/db/client";
 
 const app = express();
 const port = 3001;
-
-console.log("JWT_SECRET", process.env.JWT_SECRET);
 
 // const schema = z.object({
 //     name:z.string().max(20,"Name should be under 20 characters"),
@@ -17,7 +16,8 @@ console.log("JWT_SECRET", process.env.JWT_SECRET);
 // });
 // const siginSchema = schema.pick({email:true,password:true});
 
-app.post("/signup",(req,res)=>{
+//should change username to email in the schema and everywhere else 
+app.post("/signup",async (req,res)=>{
     const safe = {username:req.body.username, password:req.body.password, name:req.body.name};
     const User = signupSchema.safeParse(safe);
     if(!User.success){
@@ -25,11 +25,26 @@ app.post("/signup",(req,res)=>{
             message:"Invalid data"
         });
     }
-    console.log(User.data);
+    try{
+        //here change the username to email in the schema
+        await prisma.user.create({
+        data:{
+            email:User.data?.username,
+            password:User.data.password,
+            name:User.data.name,
+        }
+    });
     res.json({
         user:User.data,
         message:"User created successfully"
     });
+    }
+    catch(e){
+        if(e instanceof Error && e.message.includes("duplicate key value violates unique constraint")){
+            return res.status(400).json({message:"User already exists"});
+        }
+        else{return res.status(500).json({message:"Internal server error"});}
+    }
 })
 
 app.post("/signin",(req,res)=>{
