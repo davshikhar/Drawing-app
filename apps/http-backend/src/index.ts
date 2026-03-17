@@ -4,9 +4,9 @@ import jwt from "jsonwebtoken";
 import {z} from  "zod";
 import { middleware } from "./middleware";
 import {signupSchema, siginSchema, createRoomSchema} from "@repo/common/types";
-
 import {prisma} from "@repo/db/client";
 dotenv.config({path:"../../.env"});
+import bcrypt from "bcrypt";
 
 const app = express();
 const port = 3001;
@@ -29,12 +29,13 @@ app.post("/signup",async (req,res)=>{
             message:"Invalid data"
         });
     }
+    const hashedPassword = await bcrypt.hash(User.data.password,3);
     try{
         //here change the username to email in the schema
         const user = await prisma.user.create({
         data:{
             email:User.data?.username,
-            password:User.data.password,
+            password:hashedPassword,
             name:User.data.name,
         }
     });
@@ -51,7 +52,7 @@ app.post("/signup",async (req,res)=>{
     }
 })
 
-app.post("/signin",(req,res)=>{
+app.post("/signin",async (req,res)=>{
     const login = {username:req.body.username, password:req.body.password};
     const loginData = siginSchema.safeParse(login);
     if(!loginData.success){
@@ -60,11 +61,18 @@ app.post("/signin",(req,res)=>{
         });
     }
     else{
-        const passwordMatch = false;
-        const response = {"username":"shikhar"};
+        const user = await prisma.user.findUnique({
+            where:{
+                email:loginData.data.username
+            }
+        });
+        if(user==null){
+            return res.status(400).json({message:"No such user found"});
+        }
+        const passwordMatch = await bcrypt.compare(loginData.data.password,user.password);
         if(passwordMatch){
             const token = jwt.sign(
-                {username:response.username},process.env.JWT_SECRET as string
+                {userId:user.id},process.env.JWT_SECRET as string
             );
             res.json({token:token});
             return;
@@ -77,15 +85,24 @@ app.post("/signin",(req,res)=>{
     }
 });
 
-app.post("/room",middleware,(req,res)=>{
+app.post("/room",middleware,async (req,res)=>{
     //db call over here to create a room
-    const data = createRoomSchema.safeParse(req.body);
-    if(!data.success){
+    const parsedData = createRoomSchema.safeParse(req.body);
+    if(!parsedData.success){
         res.json({
             message:"Invalid data",
         })
         return;
     }
+    //@ts-ignore, fix these in globa request object
+    const userId = req.userId;
+    await prisma.room.create({
+        data:{
+            slug:parsedData.data.name,
+            adminId:userId
+        }
+    });
+    
     res.json({
         roomId:"12345",
         message:"Room created successfully"
