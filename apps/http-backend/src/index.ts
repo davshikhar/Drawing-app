@@ -1,13 +1,17 @@
-require("dotenv").config({path:"../../.env"});
+import dotenv from "dotenv";
 import express from "express";
 import jwt from "jsonwebtoken";
 import {z} from  "zod";
 import { middleware } from "./middleware";
 import {signupSchema, siginSchema, createRoomSchema} from "@repo/common/types";
+
 import {prisma} from "@repo/db/client";
+dotenv.config({path:"../../.env"});
 
 const app = express();
 const port = 3001;
+
+app.use(express.json());
 
 // const schema = z.object({
 //     name:z.string().max(20,"Name should be under 20 characters"),
@@ -27,7 +31,7 @@ app.post("/signup",async (req,res)=>{
     }
     try{
         //here change the username to email in the schema
-        await prisma.user.create({
+        const user = await prisma.user.create({
         data:{
             email:User.data?.username,
             password:User.data.password,
@@ -35,7 +39,7 @@ app.post("/signup",async (req,res)=>{
         }
     });
     res.json({
-        user:User.data,
+        userId:user.id,
         message:"User created successfully"
     });
     }

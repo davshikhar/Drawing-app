@@ -19,10 +19,10 @@
     "@repo/db":"workspace:*"
   },
   "devDependencies": {
+    "@repo/backend-common": "workspace:*",
+    "@repo/common": "workspace:*",
     "@repo/typescript-config": "workspace:*",
-    "@types/express": "^5.0.6",
-     "@repo/backend-common":"workspace:*",
-     "@repo/common":"workspace:*"
+    "@types/express": "^5.0.6"
   },
   "keywords": [],
   "author": "",
