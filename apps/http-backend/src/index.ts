@@ -94,17 +94,17 @@ app.post("/room",middleware,async (req,res)=>{
         })
         return;
     }
-    //@ts-ignore, fix these in globa request object
+
     const userId = req.userId;
-    await prisma.room.create({
+    const room = await prisma.room.create({
         data:{
             slug:parsedData.data.name,
-            adminId:userId
+            adminId:userId,
         }
     });
-    
+
     res.json({
-        roomId:"12345",
+        roomId:room.id,
         message:"Room created successfully"
     });
 })
